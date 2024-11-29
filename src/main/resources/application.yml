@@ -1,0 +1,16 @@
+server:
+  port: 5678
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+file:
+  out:
+    path: /home/tim/output/images/
+  path: /home/tim/images/
+
+hashmap:
+  maxSize: 1000
