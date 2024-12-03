@@ -1,13 +1,14 @@
 package com.orange.demo.demos.web.handler;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.servlet.ServletUtil;
-import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StopWatch;
 import org.springframework.web.servlet.HandlerInterceptor;
-import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.Servlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
@@ -22,18 +23,29 @@ public class AccessHandler implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         Map<String, String> paramMap = ServletUtil.getParamMap(request);
-        log.info("[开始请求，Request Url:{},Parameter:{}]", request.getRequestURL(), JSONUtil.toJsonStr(request.getParameterMap()));
+        String body = StrUtil.startWithIgnoreCase(request.getContentType(), MediaType.APPLICATION_JSON_VALUE) ? ServletUtil.getBody(request) : null;
+
+        if (CollUtil.isNotEmpty(paramMap) && StrUtil.isNotBlank(body)) {
+            log.info("[AccessHandler] [开始请求 URL({}), 参数({})]", request.getRequestURI(), StrUtil.blankToDefault(body, paramMap.toString()));
+        } else {
+            log.info("[AccessHandler] [开始请求 URL({}), 无参数]", request.getRequestURI());
+        }
+
+        // 计时
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+
+        request.setAttribute("stopWatch", stopWatch);
+
         return HandlerInterceptor.super.preHandle(request, response, handler);
     }
 
     @Override
-    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
-        HandlerInterceptor.super.postHandle(request, response, handler, modelAndView);
-    }
-
-    @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
-        log.info("[结束请求：Request Url:{},Parameter:{}]", request.getRequestURL(), JSONUtil.toJsonStr(request.getParameterMap()));
+        StopWatch stopWatch = (StopWatch) request.getAttribute("stopWatch");
+        stopWatch.stop();
+
+        log.info("[AccessHandler] [完成 URL({}), 耗时({} ms)]", request.getRequestURI(), stopWatch.getLastTaskTimeMillis());
         HandlerInterceptor.super.afterCompletion(request, response, handler, ex);
     }
 }

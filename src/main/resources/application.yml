@@ -9,8 +9,9 @@ spring:
 
 file:
   out:
-    path: /home/tim/output/images/
+    path: /home/tim/images/output/
   path: /home/tim/images/
+  media: https://www.adstech-x.com/media/
 
 hashmap:
   maxSize: 1000
