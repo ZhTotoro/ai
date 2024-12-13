@@ -3,8 +3,8 @@ package com.orange.demo.demos.web.handler;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.servlet.ServletUtil;
+import com.orange.demo.demos.web.utils.ServletUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -22,10 +22,12 @@ import java.util.Map;
 public class AccessHandler implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        Map<String, String> paramMap = ServletUtil.getParamMap(request);
-        String body = StrUtil.startWithIgnoreCase(request.getContentType(), MediaType.APPLICATION_JSON_VALUE) ? ServletUtil.getBody(request) : null;
 
-        if (CollUtil.isNotEmpty(paramMap) && StrUtil.isNotBlank(body)) {
+        Map<String, String> paramMap = ServletUtil.getParamMap(request);
+
+        String body = ServletUtils.isJsonRequest(request) ? ServletUtils.getBody(request) : null;
+
+        if (CollUtil.isNotEmpty(paramMap) || StrUtil.isNotBlank(body)) {
             log.info("[AccessHandler] [开始请求 URL({}), 参数({})]", request.getRequestURI(), StrUtil.blankToDefault(body, paramMap.toString()));
         } else {
             log.info("[AccessHandler] [开始请求 URL({}), 无参数]", request.getRequestURI());
@@ -37,7 +39,7 @@ public class AccessHandler implements HandlerInterceptor {
 
         request.setAttribute("stopWatch", stopWatch);
 
-        return HandlerInterceptor.super.preHandle(request, response, handler);
+        return true;
     }
 
     @Override
@@ -46,6 +48,5 @@ public class AccessHandler implements HandlerInterceptor {
         stopWatch.stop();
 
         log.info("[AccessHandler] [完成 URL({}), 耗时({} ms)]", request.getRequestURI(), stopWatch.getLastTaskTimeMillis());
-        HandlerInterceptor.super.afterCompletion(request, response, handler, ex);
     }
 }
